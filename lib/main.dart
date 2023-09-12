@@ -5,7 +5,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 const TITLE = 'Web Wrapper';
 const SEED_COLOR = Colors.greenAccent;
-const TARGET_URL = 'https://google.com/';
+const TARGET_URL = 'https://google.co.id/';
 
 void main() {
   runApp(const MyApp());
