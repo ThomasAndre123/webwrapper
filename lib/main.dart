@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 // import 'package:webview_flutter/webview_flutter.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:wakelock/wakelock.dart';
 
 const TITLE = 'Web Wrapper';
 const SEED_COLOR = Colors.greenAccent;
@@ -63,6 +64,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
+    Wakelock.enable();
     /*
     _controller.setJavaScriptMode(JavaScriptMode.unrestricted);
     _controller.loadRequest(Uri.parse(TARGET_URL));
@@ -87,119 +89,158 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        // make appbar smaller
-        toolbarHeight: 36,
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(
-          widget.title,
-          style: Theme.of(context).textTheme.labelMedium,
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.home),
-            onPressed: () {
-              webViewController?.loadUrl(
-                  urlRequest: URLRequest(url: Uri.parse(TARGET_URL)));
-            },
+    return WillPopScope(
+      onWillPop: () async {
+        bool canGoBack = false;
+        if (webViewController != null) {
+          canGoBack = await webViewController!.canGoBack();
+        }
+        if (canGoBack) {
+          webViewController?.goBack();
+          return false;
+        } else {
+          // ask user
+          bool? choice = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Exit'),
+              content: const Text('Do you want to exit?'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(false);
+                  },
+                  child: const Text('No'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(true);
+                  },
+                  child: const Text('Yes'),
+                ),
+              ],
+            ),
+          );
+          if (choice == true) {
+            return true; // only if user choose yes
+          }
+          return false;
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          // make appbar smaller
+          toolbarHeight: 36,
+          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+          title: Text(
+            widget.title,
+            style: Theme.of(context).textTheme.labelMedium,
           ),
-          IconButton(
-            onPressed: () {
-              webViewController?.reload();
-            },
-            icon: const Icon(Icons.refresh),
-          ),
-        ],
-      ),
-      body: Center(
-        /*
-        child: WebViewWidget(
-          controller: _controller,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.home),
+              onPressed: () {
+                webViewController?.loadUrl(
+                    urlRequest: URLRequest(url: Uri.parse(TARGET_URL)));
+              },
+            ),
+            IconButton(
+              onPressed: () {
+                webViewController?.reload();
+              },
+              icon: const Icon(Icons.refresh),
+            ),
+          ],
         ),
-        */
+        body: Center(
+          /*
+          child: WebViewWidget(
+            controller: _controller,
+          ),
+          */
 
-        child: InAppWebView(
-          key: webViewKey,
-          initialUrlRequest: URLRequest(url: Uri.parse(TARGET_URL)),
-          initialOptions: options,
-          // pullToRefreshController: pullToRefreshController,
-          onWebViewCreated: (controller) {
-            webViewController = controller;
-          },
-          onLoadStart: (controller, url) {
-            /*
-            setState(() {
-              this.url = url.toString();
-              urlController.text = this.url;
-            });
-            */
-          },
-          androidOnPermissionRequest: (controller, origin, resources) async {
-            return PermissionRequestResponse(
-                resources: resources,
-                action: PermissionRequestResponseAction.GRANT);
-          },
-          shouldOverrideUrlLoading: (controller, navigationAction) async {
-            // var uri = navigationAction.request.url!;
+          child: InAppWebView(
+            key: webViewKey,
+            initialUrlRequest: URLRequest(url: Uri.parse(TARGET_URL)),
+            initialOptions: options,
+            // pullToRefreshController: pullToRefreshController,
+            onWebViewCreated: (controller) {
+              webViewController = controller;
+            },
+            onLoadStart: (controller, url) {
+              /*
+              setState(() {
+                this.url = url.toString();
+                urlController.text = this.url;
+              });
+              */
+            },
+            androidOnPermissionRequest: (controller, origin, resources) async {
+              return PermissionRequestResponse(
+                  resources: resources,
+                  action: PermissionRequestResponseAction.GRANT);
+            },
+            shouldOverrideUrlLoading: (controller, navigationAction) async {
+              // var uri = navigationAction.request.url!;
 
-            // if (![
-            //   "http",
-            //   "https",
-            //   "file",
-            //   "chrome",
-            //   "data",
-            //   "javascript",
-            //   "about"
-            // ].contains(uri.scheme)) {
-            //   if (await canLaunch(url)) {
-            //     // Launch the App
-            //     await launch(
-            //       url,
-            //     );
-            //     // and cancel the request
-            //     return NavigationActionPolicy.CANCEL;
-            //   }
-            // }
+              // if (![
+              //   "http",
+              //   "https",
+              //   "file",
+              //   "chrome",
+              //   "data",
+              //   "javascript",
+              //   "about"
+              // ].contains(uri.scheme)) {
+              //   if (await canLaunch(url)) {
+              //     // Launch the App
+              //     await launch(
+              //       url,
+              //     );
+              //     // and cancel the request
+              //     return NavigationActionPolicy.CANCEL;
+              //   }
+              // }
 
-            return NavigationActionPolicy.ALLOW;
-          },
-          onLoadStop: (controller, url) async {
-            /*
-            pullToRefreshController.endRefreshing();
-            setState(() {
-              this.url = url.toString();
-              urlController.text = this.url;
-            });
-            */
-          },
-          onLoadError: (controller, url, code, message) {
-            /*
-            pullToRefreshController.endRefreshing();
-            */
-          },
-          onProgressChanged: (controller, progress) {
-            /*
-            if (progress == 100) {
+              return NavigationActionPolicy.ALLOW;
+            },
+            onLoadStop: (controller, url) async {
+              /*
               pullToRefreshController.endRefreshing();
-            }
-            setState(() {
-              this.progress = progress / 100;
-              urlController.text = this.url;
-            });
-            */
-          },
-          onUpdateVisitedHistory: (controller, url, androidIsReload) {
-            /*
-            setState(() {
-              this.url = url.toString();
-              urlController.text = this.url;
-            });
-            */
-          },
-          onConsoleMessage: (controller, consoleMessage) {
-            print(consoleMessage);
-          },
+              setState(() {
+                this.url = url.toString();
+                urlController.text = this.url;
+              });
+              */
+            },
+            onLoadError: (controller, url, code, message) {
+              /*
+              pullToRefreshController.endRefreshing();
+              */
+            },
+            onProgressChanged: (controller, progress) {
+              /*
+              if (progress == 100) {
+                pullToRefreshController.endRefreshing();
+              }
+              setState(() {
+                this.progress = progress / 100;
+                urlController.text = this.url;
+              });
+              */
+            },
+            onUpdateVisitedHistory: (controller, url, androidIsReload) {
+              /*
+              setState(() {
+                this.url = url.toString();
+                urlController.text = this.url;
+              });
+              */
+            },
+            onConsoleMessage: (controller, consoleMessage) {
+              print(consoleMessage);
+            },
+          ),
         ),
       ),
     );
