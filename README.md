@@ -19,5 +19,5 @@ Turn your website to APK
 
   1. run `flutter build apk --split-per-abi`
   2. the output file will be at `build/app/outputs/apk/release/app-arm64-v8a-release.apk`
-
+  3. you can rename the file as you like
 
