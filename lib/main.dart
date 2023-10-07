@@ -149,6 +149,26 @@ class _MyHomePageState extends State<MyHomePage> {
                 },
                 icon: const Icon(Icons.refresh),
               ),
+              // three dots
+              PopupMenuButton(
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    child: Text('Clear Cache'),
+                    value: 'clearcache',
+                  ),
+                ],
+                onSelected: (value) {
+                  if (value == 'clearcache') {
+                    webViewController?.clearCache();
+                    // show snackbar
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Cache cleared'),
+                      ),
+                    );
+                  }
+                },
+              ),
             ],
           ),
           body: Center(
