@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 // import 'package:webview_flutter/webview_flutter.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:wakelock/wakelock.dart';
 
 String TITLE = 'Web Wrapper';
@@ -216,6 +217,28 @@ class _MyHomePageState extends State<MyHomePage> {
                   action: PermissionRequestResponseAction.GRANT);
             },
             shouldOverrideUrlLoading: (controller, navigationAction) async {
+              var uri = navigationAction.request.url!;
+
+              if (![
+                "http",
+                "https",
+                "file",
+                "chrome",
+                "data",
+                "javascript",
+                "about"
+              ].contains(uri.scheme)) {
+                if (await canLaunchUrl(uri)) {
+                  // Launch the App
+                  await launchUrl(uri);
+                  // and cancel the request
+                  return NavigationActionPolicy.CANCEL;
+                } else {
+                  // print('Could not launch $uri');
+                  return NavigationActionPolicy.CANCEL;
+                }
+              }
+
               return NavigationActionPolicy.ALLOW;
             },
             onLoadStop: (controller, url) async {},
